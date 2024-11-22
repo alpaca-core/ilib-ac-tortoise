@@ -15,7 +15,7 @@ target_link_libraries(tortoise
         ggml
 )
 
-icm_add_lib(ac-tortoise AC_WHISPER)
+icm_add_lib(ac-tortoise AC_TORTOISE)
 add_library(ac::tortoise ALIAS ac-tortoise)
 target_include_directories(ac-tortoise INTERFACE .)
 target_link_libraries(ac-tortoise

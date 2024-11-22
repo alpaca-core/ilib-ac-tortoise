@@ -261,6 +261,7 @@ struct vocoder_model {
 
 using trimmed_latents_vector = std::vector<std::vector<float>>;
 using sequence_vector = std::vector<std::vector<int>>;
+
 // ===================================================
 
 bool autoregressive_model_load(const std::string &fname, autoregressive_model &model);
@@ -268,11 +269,10 @@ bool diffusion_model_load(const std::string &fname, diffusion_model &model);
 bool vocoder_model_load(const std::string &fname, vocoder_model &model);
 
 std::pair<trimmed_latents_vector, sequence_vector> autoregressive(
+  autoregressive_model& model,
   std::vector<gpt_vocab::id> tokens,
   std::string voice_path,
   int batch_size);
 
 std::vector<float> diffusion(diffusion_model& dfsn_model, std::vector<float> trimmed_latents);
-std::vector<float> vocoder(std::vector<float> mel);
-
-void writeWav(const char *filename, const std::vector<float> &data, int sampleRate);
+std::vector<float> vocoder(vocoder_model& vocoder, std::vector<float> mel);

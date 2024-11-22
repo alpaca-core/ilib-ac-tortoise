@@ -49,109 +49,7 @@ std::mt19937 generator(time_seed);
 std::uniform_real_distribution<float> distribution(0.0, 1.0);
 std::normal_distribution<double> normal_distribution(0.0, 1.0);
 
-void localAssert(bool condition) {
-  if (!condition) {
-    std::cout << "failure" << std::endl;
-    exit(0);
-  }
-}
-
-void save_f32_tensor(ggml_tensor *tensor, std::string path_name) {
-  std::ofstream stream;
-  stream.open(path_name, std::ios::out | std::ios::binary);
-
-  int elements = tensor->ne[0] * tensor->ne[1] * tensor->ne[2] * tensor->ne[3];
-
-  std::vector<float> data_read(elements);
-  ggml_backend_tensor_get(tensor, data_read.data(), 0,
-                          sizeof(float) * elements);
-  stream.write(reinterpret_cast<const char *>(data_read.data()),
-               elements * sizeof(float));
-  stream.close();
-}
-
-void compare_to_saved_tensor_with_name(ggml_tensor *tensor) {
-
-  std::string filename = "./logs/" + std::string(tensor->name) + ".txt";
-
-  int nBytes = tensor->ne[0] * tensor->ne[1] * tensor->ne[2] * tensor->ne[3] *
-               sizeof(float);
-
-  std::ifstream file(filename, std::ios::binary);
-  if (!file.is_open()) {
-    std::cerr << "Error: Unable to open file " << filename << std::endl;
-    return;
-  }
-
-  // Calculate number of floats to read based on number of bytes
-  size_t numFloats = nBytes / sizeof(float);
-  std::vector<float> floats(numFloats);
-
-  // Read floats from file
-  file.read(reinterpret_cast<char *>(floats.data()), nBytes);
-
-  file.close();
-
-  std::vector<float> tensor_floats(numFloats);
-  ggml_backend_tensor_get(tensor, tensor_floats.data(), 0, nBytes);
-
-  std::cout << "starting comparison" << std::endl;
-
-  bool write_flag = true;
-  int lastIndex = -1;
-  for (int i = 0; i < floats.size(); i++) {
-    // std::cout << floats[i] << std::endl;
-    if (abs(floats[i] - tensor_floats[i]) > .01) {
-      if (write_flag) {
-        std::cout << i << ": " << floats[i] << "," << tensor_floats[i]
-                  << std::endl;
-      }
-      lastIndex = i;
-      write_flag = false;
-    }
-  }
-  if (lastIndex != -1) {
-    std::cout << "last index " << lastIndex << ": " << floats[lastIndex] << ","
-              << tensor_floats[lastIndex] << std::endl;
-  }
-
-  std::cout << "done with comparison" << std::endl;
-}
-
-void extract_tensor_to_vector(ggml_tensor *tensor, std::vector<float> &vector) {
-  int elements = tensor->ne[0] * tensor->ne[1] * tensor->ne[2] * tensor->ne[3];
-  vector.resize(elements);
-  ggml_backend_tensor_get(tensor, vector.data(), 0, sizeof(float) * elements);
-}
-
-// clang-format off
-
-/*
-
-  ██████╗ ██████╗ ████████╗   ██████╗
- ██╔════╝ ██╔══██╗╚══██╔══╝   ╚════██╗
- ██║  ███╗██████╔╝   ██║█████╗ █████╔╝
- ██║   ██║██╔═══╝    ██║╚════╝██╔═══╝
- ╚██████╔╝██║        ██║      ███████╗
-  ╚═════╝ ╚═╝        ╚═╝      ╚══════╝
-
- ████████╗███████╗███╗   ██╗███████╗ ██████╗ ██████╗
- ╚══██╔══╝██╔════╝████╗  ██║██╔════╝██╔═══██╗██╔══██╗
-    ██║   █████╗  ██╔██╗ ██║███████╗██║   ██║██████╔╝
-    ██║   ██╔══╝  ██║╚██╗██║╚════██║██║   ██║██╔══██╗
-    ██║   ███████╗██║ ╚████║███████║╚██████╔╝██║  ██║
-    ╚═╝   ╚══════╝╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
-
- ██╗      ██████╗  █████╗ ██████╗
- ██║     ██╔═══██╗██╔══██╗██╔══██╗
- ██║     ██║   ██║███████║██║  ██║
- ██║     ██║   ██║██╔══██║██║  ██║
- ███████╗╚██████╔╝██║  ██║██████╔╝
- ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝
-
-*/
-// clang-format on
-
+// Autoregressive model tensor loading
 // derived from  gpt2_model_load(const std::string & fname, gpt2_model & model,
 // gpt_vocab & vocab, int n_ctx, int n_gpu_layers) {
 bool autoregressive_model_load(const std::string &fname, autoregressive_model &model) {
@@ -570,36 +468,7 @@ bool autoregressive_model_load(const std::string &fname, autoregressive_model &m
   return true;
 }
 
-// clang-format off
-
-/*
-
- ██████╗ ██╗███████╗███████╗██╗   ██╗███████╗██╗ ██████╗ ███╗   ██╗
- ██╔══██╗██║██╔════╝██╔════╝██║   ██║██╔════╝██║██╔═══██╗████╗  ██║
- ██║  ██║██║█████╗  █████╗  ██║   ██║███████╗██║██║   ██║██╔██╗ ██║
- ██║  ██║██║██╔══╝  ██╔══╝  ██║   ██║╚════██║██║██║   ██║██║╚██╗██║
- ██████╔╝██║██║     ██║     ╚██████╔╝███████║██║╚██████╔╝██║ ╚████║
- ╚═════╝ ╚═╝╚═╝     ╚═╝      ╚═════╝ ╚══════╝╚═╝ ╚═════╝ ╚═╝  ╚═══╝
-
- ████████╗███████╗███╗   ██╗███████╗ ██████╗ ██████╗
- ╚══██╔══╝██╔════╝████╗  ██║██╔════╝██╔═══██╗██╔══██╗
-    ██║   █████╗  ██╔██╗ ██║███████╗██║   ██║██████╔╝
-    ██║   ██╔══╝  ██║╚██╗██║╚════██║██║   ██║██╔══██╗
-    ██║   ███████╗██║ ╚████║███████║╚██████╔╝██║  ██║
-    ╚═╝   ╚══════╝╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
-
- ██╗      ██████╗  █████╗ ██████╗
- ██║     ██╔═══██╗██╔══██╗██╔══██╗
- ██║     ██║   ██║███████║██║  ██║
- ██║     ██║   ██║██╔══██║██║  ██║
- ███████╗╚██████╔╝██║  ██║██████╔╝
- ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝
-
-
-*/
-
-// clang-format on
-
+// Diffusion model tensor loading
 // derived from  gpt2_model_load(const std::string & fname, gpt2_model & model,
 // gpt_vocab & vocab, int n_ctx, int n_gpu_layers) {
 bool diffusion_model_load(const std::string &fname, diffusion_model &model) {
@@ -1307,35 +1176,7 @@ bool diffusion_model_load(const std::string &fname, diffusion_model &model) {
   return true;
 }
 
-// clang-format off
-
-/*
-
- ██╗   ██╗ ██████╗  ██████╗ ██████╗ ██████╗ ███████╗██████╗
- ██║   ██║██╔═══██╗██╔════╝██╔═══██╗██╔══██╗██╔════╝██╔══██╗
- ██║   ██║██║   ██║██║     ██║   ██║██║  ██║█████╗  ██████╔╝
- ╚██╗ ██╔╝██║   ██║██║     ██║   ██║██║  ██║██╔══╝  ██╔══██╗
-  ╚████╔╝ ╚██████╔╝╚██████╗╚██████╔╝██████╔╝███████╗██║  ██║
-   ╚═══╝   ╚═════╝  ╚═════╝ ╚═════╝ ╚═════╝ ╚══════╝╚═╝  ╚═╝
-
- ████████╗███████╗███╗   ██╗███████╗ ██████╗ ██████╗
- ╚══██╔══╝██╔════╝████╗  ██║██╔════╝██╔═══██╗██╔══██╗
-    ██║   █████╗  ██╔██╗ ██║███████╗██║   ██║██████╔╝
-    ██║   ██╔══╝  ██║╚██╗██║╚════██║██║   ██║██╔══██╗
-    ██║   ███████╗██║ ╚████║███████║╚██████╔╝██║  ██║
-    ╚═╝   ╚══════╝╚═╝  ╚═══╝╚══════╝ ╚═════╝ ╚═╝  ╚═╝
-
- ██╗      ██████╗  █████╗ ██████╗
- ██║     ██╔═══██╗██╔══██╗██╔══██╗
- ██║     ██║   ██║███████║██║  ██║
- ██║     ██║   ██║██╔══██║██║  ██║
- ███████╗╚██████╔╝██║  ██║██████╔╝
- ╚══════╝ ╚═════╝ ╚═╝  ╚═╝╚═════╝
-
-*/
-
-// clang-format on
-
+// Vocoder model tensor loading
 bool vocoder_model_load(const std::string &fname, vocoder_model &model) {
   printf("%s: loading model from '%s'\n", __func__, fname.c_str());
 
@@ -1694,37 +1535,13 @@ bool vocoder_model_load(const std::string &fname, vocoder_model &model) {
   return true;
 }
 
-// clang-format off
+void extract_tensor_to_vector(ggml_tensor *tensor, std::vector<float> &vector) {
+  int elements = tensor->ne[0] * tensor->ne[1] * tensor->ne[2] * tensor->ne[3];
+  vector.resize(elements);
+  ggml_backend_tensor_get(tensor, vector.data(), 0, sizeof(float) * elements);
+}
 
-/*
-
-  ██████╗ ██████╗ ████████╗   ██████╗
- ██╔════╝ ██╔══██╗╚══██╔══╝   ╚════██╗
- ██║  ███╗██████╔╝   ██║█████╗ █████╔╝
- ██║   ██║██╔═══╝    ██║╚════╝██╔═══╝
- ╚██████╔╝██║        ██║      ███████╗
-  ╚═════╝ ╚═╝        ╚═╝      ╚══════╝
-
- ██╗      █████╗ ████████╗███████╗███╗   ██╗████████╗
- ██║     ██╔══██╗╚══██╔══╝██╔════╝████╗  ██║╚══██╔══╝
- ██║     ███████║   ██║   █████╗  ██╔██╗ ██║   ██║
- ██║     ██╔══██║   ██║   ██╔══╝  ██║╚██╗██║   ██║
- ███████╗██║  ██║   ██║   ███████╗██║ ╚████║   ██║
- ╚══════╝╚═╝  ╚═╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝   ╚═╝
-
-  ██████╗ ██████╗  █████╗ ██████╗ ██╗  ██╗
- ██╔════╝ ██╔══██╗██╔══██╗██╔══██╗██║  ██║
- ██║  ███╗██████╔╝███████║██████╔╝███████║
- ██║   ██║██╔══██╗██╔══██║██╔═══╝ ██╔══██║
- ╚██████╔╝██║  ██║██║  ██║██║     ██║  ██║
-  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝
-
-
-*/
-
-// clang-format on
-
-struct ggml_cgraph *autoregressive_latent_graph(
+struct ggml_cgraph* autoregressive_latent_graph(
     const autoregressive_model &model,
     const std::vector<int> mel_transformer_inputs_vector,
     const std::vector<gpt_vocab::id> &tokens, const int batch_size) {
@@ -2186,36 +2003,13 @@ struct ggml_cgraph *autoregressive_latent_graph(
   return gf;
 }
 
-// clang-format off
 
-
-/*
-
-  ██████╗ ██████╗ ████████╗   ██████╗
- ██╔════╝ ██╔══██╗╚══██╔══╝   ╚════██╗
- ██║  ███╗██████╔╝   ██║█████╗ █████╔╝
- ██║   ██║██╔═══╝    ██║╚════╝██╔═══╝
- ╚██████╔╝██║        ██║      ███████╗
-  ╚═════╝ ╚═╝        ╚═╝      ╚══════╝
-
-  ██████╗ ██████╗  █████╗ ██████╗ ██╗  ██╗
- ██╔════╝ ██╔══██╗██╔══██╗██╔══██╗██║  ██║
- ██║  ███╗██████╔╝███████║██████╔╝███████║
- ██║   ██║██╔══██╗██╔══██║██╔═══╝ ██╔══██║
- ╚██████╔╝██║  ██║██║  ██║██║     ██║  ██║
-  ╚═════╝ ╚═╝  ╚═╝╚═╝  ╚═╝╚═╝     ╚═╝  ╚═╝
-
-
-*/
-
-// clang-format on
-
-struct ggml_cgraph *
-autoregressive_graph(const autoregressive_model &model,
-                     const std::vector<int> mel_transformer_inputs_vector,
-                     const std::vector<gpt_vocab::id> &tokens,
-                     const bool fake_inputs, const int n_past,
-                     const int fixed_position, const int batch_size) {
+struct ggml_cgraph* autoregressive_graph(
+    const autoregressive_model &model,
+    const std::vector<int> mel_transformer_inputs_vector,
+    const std::vector<gpt_vocab::id> &tokens,
+    const bool fake_inputs, const int n_past,
+    const int fixed_position, const int batch_size) {
 
   const int token_count = tokens.size();
 
@@ -2728,13 +2522,13 @@ autoregressive_graph(const autoregressive_model &model,
 
 // clang-format on
 
-struct ggml_cgraph *diffusion_graph(struct diffusion_model &model,
-                                    std::vector<float> &latent,
-                                    int output_sequence_length,
-                                    int diffusion_index,
-                                    bool conditioning_free) {
-  static size_t buf_size = ggml_tensor_overhead() * GPT2_MAX_NODES +
-                           ggml_graph_overhead_custom(GPT2_MAX_NODES, false);
+struct ggml_cgraph *diffusion_graph(
+    diffusion_model &model,
+    std::vector<float> &latent,
+    int output_sequence_length,
+    int diffusion_index,
+    bool conditioning_free) {
+  static size_t buf_size = ggml_tensor_overhead() * GPT2_MAX_NODES + ggml_graph_overhead_custom(GPT2_MAX_NODES, false);
   static std::vector<uint8_t> buf(buf_size);
 
   struct ggml_init_params params = {
@@ -3652,12 +3446,12 @@ struct ggml_cgraph *diffusion_graph(struct diffusion_model &model,
 
 // clang-format on
 
-struct ggml_cgraph *vocoder_graph(struct vocoder_model &model,
-                                  std::vector<float> &mel_vector,
-                                  std::vector<float> &padding_vector) {
+struct ggml_cgraph *vocoder_graph(
+    vocoder_model &model,
+    std::vector<float> &mel_vector,
+    std::vector<float> &padding_vector) {
 
-  static size_t buf_size = ggml_tensor_overhead() * GPT2_MAX_NODES +
-                           ggml_graph_overhead_custom(GPT2_MAX_NODES, false);
+  static size_t buf_size = ggml_tensor_overhead() * GPT2_MAX_NODES + ggml_graph_overhead_custom(GPT2_MAX_NODES, false);
   static std::vector<uint8_t> buf(buf_size);
 
   struct ggml_init_params params = {
@@ -4165,7 +3959,6 @@ void softmax_inplace(std::vector<float> &src) {
 }
 
 void top_p_inplace(std::vector<float> &src) {
-
   std::vector<std::pair<float, int>> src_pairs;
   for (int i = 0; i < src.size(); i++) {
     src_pairs.push_back(std::make_pair(src[i], i));
@@ -4211,10 +4004,9 @@ std::vector<float> sample_normal_noise(int length) {
   return noise;
 }
 
-int multinomial(
-    std::vector<float> probs) // worth changing to a binary search at some
-                              // point, but for now done the simple way
-{
+// worth changing to a binary search at some
+// point, but for now done the simple way
+int multinomial( std::vector<float> probs){
 
   float sample = distribution(generator);
   sample = distribution(generator);
@@ -4261,15 +4053,11 @@ std::vector<int> get_relative_position_buckets(int latent_length) {
 
 // takes the raw logits coming out of of a pass through gpt2 and transforms them
 // into a multinomial distribution, then samples from said distribution.
-std::vector<int>
-process_logits_and_sample(ggml_cgraph *gf,
+std::vector<int> process_logits_and_sample(ggml_cgraph *gf,
                           std::vector<int> &mel_transformer_inputs_vector,
                           int index, int batch_size) {
 
   ggml_tensor *next_token_logits = gf->nodes[gf->n_nodes - 1];
-
-  // save_f32_tensor(next_token_logits, "logs/next_token_logits_" +
-  // std::to_string(index) +   ".data");
 
   int elements = next_token_logits->ne[0] * next_token_logits->ne[1] *
                  next_token_logits->ne[2] * next_token_logits->ne[3];
@@ -4316,68 +4104,6 @@ process_logits_and_sample(ggml_cgraph *gf,
   return samples;
 }
 
-// thanks gpt3.5
-void replaceAll(std::string &str, const std::string &from,
-                const std::string &to) {
-  size_t start_pos = 0;
-  while ((start_pos = str.find(from, start_pos)) != std::string::npos) {
-    str.replace(start_pos, from.length(), to);
-    start_pos += to.length(); // In case 'to' contains 'from', advance start_pos
-                              // to avoid infinite loop
-  }
-}
-
-// thanks gpt3.5
-// Function to write a WAV file from floating-point data
-void writeWav(const char *filename, const std::vector<float> &data,
-              int sampleRate) {
-  // WAV file parameters
-  int numChannels = 1;    // Mono
-  int bitsPerSample = 32; // Float (32-bit)
-  int byteRate = sampleRate * numChannels * bitsPerSample / 8;
-  int blockAlign = numChannels * bitsPerSample / 8;
-
-  // Open the output file
-  std::ofstream outFile(filename, std::ios::binary);
-  if (!outFile.is_open()) {
-    std::cerr << "Error opening output file." << std::endl;
-    return;
-  }
-
-  // Write the WAV header
-  // RIFF header
-  outFile.write("RIFF", 4);
-  int fileSize =
-      36 + data.size() * sizeof(float); // Size of the entire file minus 8 bytes
-  outFile.write(reinterpret_cast<const char *>(&fileSize), 4);
-  outFile.write("WAVE", 4);
-
-  // Format subchunk
-  outFile.write("fmt ", 4);
-  int fmtSize = 16;
-  outFile.write(reinterpret_cast<const char *>(&fmtSize), 4);
-  int audioFormat = 3; // Floating point PCM
-  outFile.write(reinterpret_cast<const char *>(&audioFormat), 2);
-  outFile.write(reinterpret_cast<const char *>(&numChannels), 2);
-  outFile.write(reinterpret_cast<const char *>(&sampleRate), 4);
-  outFile.write(reinterpret_cast<const char *>(&byteRate), 4);
-  outFile.write(reinterpret_cast<const char *>(&blockAlign), 2);
-  outFile.write(reinterpret_cast<const char *>(&bitsPerSample), 2);
-
-  // Data subchunk
-  outFile.write("data", 4);
-  int dataSize = data.size() * sizeof(float);
-  outFile.write(reinterpret_cast<const char *>(&dataSize), 4);
-
-  // Write the audio data
-  outFile.write(reinterpret_cast<const char *>(data.data()), dataSize);
-
-  // Close the file
-  outFile.close();
-
-  std::cout << "WAV file saved successfully. :^)" << std::endl;
-}
-
 // trims latents to no more than 8 calm tokens at the end
 // the latents are each 1024 x 500, and there is a number equal to the batch
 // size.
@@ -4394,11 +4120,10 @@ trim_latents(std::vector<float> &latents,
     // Remove last element
     mel_codes[i].erase(mel_codes[i].end() - 1);
 
+    assert(mel_codes[i].size() == 500);
     total_sequence_length += mel_codes[i].size();
-    localAssert(mel_codes[i].size() == 500);
   }
 
-  // localAssert (total_sequence_length == latents.size());
 
   std::vector<std::vector<float>> trimmed_latents(mel_codes.size());
 
@@ -4442,8 +4167,6 @@ void print_all_tensors(struct ggml_cgraph *gf, bool leaves, bool filter_flag,
     if (filter_flag && std::string(test->name) != filter) {
       continue;
     }
-
-    save_f32_tensor(test, "logs/" + std::string(test->name) + ".txt");
 
     std::cout << "---------------------------------------------------"
               << std::endl;
@@ -4550,9 +4273,11 @@ void tokensSampled(int n) {
   std::cout.flush();
 }
 
-std::pair<std::vector<std::vector<float>>, std::vector<std::vector<int>>>
-autoregressive(std::vector<gpt_vocab::id> tokens, std::string voice_path,
-               int batch_size) {
+std::pair<trimmed_latents_vector, sequence_vector> autoregressive(
+  autoregressive_model& model,
+  std::vector<gpt_vocab::id> tokens,
+  std::string voice_path,
+  int batch_size) {
 
   // std::string message = "this[SPACE]is[SPACE]a[SPACE]test[SPACE]message";
   // std::vector<gpt_vocab::id> tokens = ::gpt_tokenize(vocab, message);
@@ -4588,20 +4313,20 @@ autoregressive(std::vector<gpt_vocab::id> tokens, std::string voice_path,
 
   std::string file_path = "../models/ggml-model.bin";
 
-  autoregressive_model model;
+  // autoregressive_model model;
 
-  // load the model
-  {
-    const int64_t t_start_us = ggml_time_us();
+  // // load the model
+  // {
+  //   const int64_t t_start_us = ggml_time_us();
 
-    if (!autoregressive_model_load(file_path, model)) {
-      fprintf(stderr, "%s: failed to load model from '%s'\n", __func__,
-              file_path.c_str());
-      exit(1);
-    }
+  //   if (!autoregressive_model_load(file_path, model)) {
+  //     fprintf(stderr, "%s: failed to load model from '%s'\n", __func__,
+  //             file_path.c_str());
+  //     exit(1);
+  //   }
 
-    t_load_us = ggml_time_us() - t_start_us;
-  }
+  //   t_load_us = ggml_time_us() - t_start_us;
+  // }
 
   std::vector<int> mel_transformer_inputs_vector = std::vector<int>();
   mel_transformer_inputs_vector.resize((tokens.size() + 2) * batch_size);
@@ -4854,9 +4579,6 @@ autoregressive(std::vector<gpt_vocab::id> tokens, std::string voice_path,
 
   // print_all_tensors(latent_gf, true, true, "cur");
   // print_all_tensors(latent_gf, false, true, "cur");
-
-  // compare_to_saved_tensor_with_name(ggml_graph_get_tensor(latent_gf, "cur"));
-  // exit(0);
 
   std::vector<float> latents = std::vector<float>();
 
@@ -5543,16 +5265,16 @@ std::vector<float> diffusion(diffusion_model& dfsn_model, std::vector<float> tri
     progressBar(50, (int)(((float)diffusion_index / 80.0) * 100));
   }
 
-  ggml_free(dfsn_model.ctx);
+  // ggml_free(dfsn_model.ctx);
 
-  ggml_backend_buffer_free(dfsn_model.buffer_w);
+  // ggml_backend_buffer_free(dfsn_model.buffer_w);
 
-  ggml_backend_free(dfsn_model.backend);
+  // ggml_backend_free(dfsn_model.backend);
 
   return x;
 }
 
-std::vector<float> vocoder(std::vector<float> mel) {
+std::vector<float> vocoder(vocoder_model& vocoder, std::vector<float> mel) {
 
   std::string vocoder_model_file_path = "../models/ggml-vocoder-model.bin";
 
@@ -5570,16 +5292,16 @@ std::vector<float> vocoder(std::vector<float> mel) {
       sample_normal_noise(((mel.size() / 100) + 10) * 64);
   // save_f32_vector("./logs/vocoder-noise.bin", vocoder_noise);
 
-  vocoder_model vocoder;
+  // vocoder_model vocoder;
 
   // load the model
-  {
-    if (!vocoder_model_load(vocoder_model_file_path, vocoder)) {
-      fprintf(stderr, "%s: failed to load model from '%s'\n", __func__,
-              vocoder_model_file_path.c_str());
-      exit(1);
-    }
-  }
+  // {
+  //   if (!vocoder_model_load(vocoder_model_file_path, vocoder)) {
+  //     fprintf(stderr, "%s: failed to load model from '%s'\n", __func__,
+  //             vocoder_model_file_path.c_str());
+  //     exit(1);
+  //   }
+  // }
 
   ggml_gallocr_t vocoder_allocr = NULL;
 
@@ -5779,11 +5501,22 @@ void test_autoregressive() {
       "255,15,55,49,9,9,9,2,134,16,51,31,2,19,46,18,176,13,0,0",
       ','); //"Based... Dr. Freeman?"
 
-  std::pair<std::vector<std::vector<float>>, std::vector<std::vector<int>>>
-      autoregressive_result = autoregressive(tokens, "../models/mol.bin", 4);
 
-  std::vector<std::vector<float>> trimmed_latents = autoregressive_result.first;
-  std::vector<std::vector<int>> sequences = autoregressive_result.second;
+  std::string file_path = "../models/ggml-model.bin";
+
+  autoregressive_model model;
+
+  // load the model
+  if (!autoregressive_model_load(file_path, model)) {
+    fprintf(stderr, "%s: failed to load model from '%s'\n", __func__,
+            file_path.c_str());
+    exit(1);
+  }
+
+  std::pair<trimmed_latents_vector, sequence_vector> autoregressive_result = autoregressive(model, tokens, "../models/mol.bin", 4);
+
+  trimmed_latents_vector& trimmed_latents = autoregressive_result.first;
+  sequence_vector& sequences = autoregressive_result.second;
 
   int trimmed_latents_size = 0;
   for (std::vector<float> trimmed_latent : trimmed_latents) {
@@ -6019,7 +5752,18 @@ void test_vocoder() {
   std::vector<float> target_audio =
       load_f32_vector("../assets/target_audio.bin", 50426 * sizeof(float));
 
-  std::vector<float> audio = vocoder(vocoder_input);
+  vocoder_model vocoder_model;
+  std::string vocoder_model_file_path = "../models/ggml-vocoder-model.bin";
+  // load the model
+  {
+    if (!vocoder_model_load(vocoder_model_file_path, vocoder_model)) {
+      fprintf(stderr, "%s: failed to load model from '%s'\n", __func__,
+              vocoder_model_file_path.c_str());
+      exit(1);
+    }
+  }
+
+  std::vector<float> audio = vocoder(vocoder_model, vocoder_input);
   if (!vectors_match(target_audio, audio)) {
     std::cout << "mel mismatch" << std::endl;
     exit(1);
