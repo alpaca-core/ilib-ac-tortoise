@@ -70,15 +70,15 @@ add_subdirectory(ggml)
 # subdirs
 add_subdirectory(code)
 
-# if(AC_TORTOISE_BUILD_TESTS OR AC_TORTOISE_BUILD_EXAMPLES)
-#     CPMAddPackage(
-#         NAME ac-test-data-tortoise
-#         VERSION 1.0.0
-#         GIT_REPOSITORY https://huggingface.co/alpaca-core/ac-test-data-tortoise
-#         GIT_TAG f33d981742198f2b55494265fc9d43156b39a30d
-#     )
-#     CPMAddPackage(gh:alpaca-core/helper-audio@1.0.0)
-# endif()
+if(AC_TORTOISE_BUILD_TESTS OR AC_TORTOISE_BUILD_EXAMPLES)
+    CPMAddPackage(
+        NAME ac-test-data-tortoise
+        VERSION 1.0.0
+        GIT_REPOSITORY https://huggingface.co/alpaca-core/ac-test-data-tortoise
+        GIT_TAG feec6ba7f383286eaefafb22ce25c7e89c7c1438
+    )
+    CPMAddPackage(gh:alpaca-core/helper-audio@1.0.0)
+endif()
 
 # if(AC_TORTOISE_BUILD_TESTS)
 #     enable_testing()
