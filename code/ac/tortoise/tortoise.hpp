@@ -140,8 +140,7 @@ struct diffusion_layer {
 
   struct ggml_tensor *attn_proj_out_bias;
 
-  struct ggml_tensor
-      *attn_relative_pos_embeddings_relative_attention_bias_weight;
+  struct ggml_tensor *attn_relative_pos_embeddings_relative_attention_bias_weight;
 };
 
 struct diffusion_model {
@@ -264,9 +263,13 @@ using sequence_vector = std::vector<std::vector<int>>;
 
 // ===================================================
 
-bool autoregressive_model_load(const std::string &fname, autoregressive_model &model);
-bool diffusion_model_load(const std::string &fname, diffusion_model &model);
-bool vocoder_model_load(const std::string &fname, vocoder_model &model);
+autoregressive_model* autoregressive_model_load(const std::string &fname);
+diffusion_model* diffusion_model_load(const std::string &fname);
+vocoder_model* vocoder_model_load(const std::string &fname);
+
+void free_autoregressive_model(autoregressive_model* model);
+void free_diffusion_model(diffusion_model* model);
+void free_vocoder_model(vocoder_model* model);
 
 std::pair<trimmed_latents_vector, sequence_vector> autoregressive(
   autoregressive_model& model,

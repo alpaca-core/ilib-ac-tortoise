@@ -52,13 +52,15 @@ std::normal_distribution<double> normal_distribution(0.0, 1.0);
 // Autoregressive model tensor loading
 // derived from  gpt2_model_load(const std::string & fname, gpt2_model & model,
 // gpt_vocab & vocab, int n_ctx, int n_gpu_layers) {
-bool autoregressive_model_load(const std::string &fname, autoregressive_model &model) {
+autoregressive_model* autoregressive_model_load(const std::string &fname) {
+  autoregressive_model* model_ptr = new autoregressive_model;
+  autoregressive_model& model = *model_ptr;
   printf("%s: loading model from '%s'\n", __func__, fname.c_str());
 
   auto fin = std::ifstream(fname, std::ios::binary);
   if (!fin) {
     fprintf(stderr, "%s: failed to open '%s'\n", __func__, fname.c_str());
-    return false;
+    return nullptr;
   }
 
   // verify magic
@@ -68,7 +70,7 @@ bool autoregressive_model_load(const std::string &fname, autoregressive_model &m
     if (magic != GGML_FILE_MAGIC) {
       fprintf(stderr, "%s: invalid model file '%s' (bad magic)\n", __func__,
               fname.c_str());
-      return false;
+      return nullptr;
     }
   }
 
@@ -214,7 +216,7 @@ bool autoregressive_model_load(const std::string &fname, autoregressive_model &m
 
   if (!model.ctx) {
     fprintf(stderr, "%s: ggml_init() failed\n", __func__);
-    return false;
+    return nullptr;
   }
 
   // initialize the backend
@@ -244,7 +246,7 @@ bool autoregressive_model_load(const std::string &fname, autoregressive_model &m
 
   if (!model.backend) {
     fprintf(stderr, "%s: ggml_backend_cpu_init() failed\n", __func__);
-    return false;
+    return nullptr;
   }
 
   // model.buffer_w = ggml_backend_alloc_buffer(model.backend, buffer_size);
@@ -406,7 +408,7 @@ bool autoregressive_model_load(const std::string &fname, autoregressive_model &m
       if (model.tensors.find(name) == model.tensors.end()) {
         fprintf(stderr, "%s: unknown tensor '%s' in model file\n", __func__,
                 name.c_str());
-        return false;
+        return nullptr;
       }
 
       auto tensor = model.tensors[name];
@@ -414,7 +416,7 @@ bool autoregressive_model_load(const std::string &fname, autoregressive_model &m
       if (ggml_nelements(tensor) != nelements) {
         fprintf(stderr, "%s: tensor '%s' has wrong size in model file\n",
                 __func__, name.c_str());
-        return false;
+        return nullptr;
       }
 
       if (tensor->ne[0] != ne[0] || tensor->ne[1] != ne[1]) {
@@ -423,7 +425,7 @@ bool autoregressive_model_load(const std::string &fname, autoregressive_model &m
                 "expected [%d, %d]\n",
                 __func__, name.c_str(), (int)tensor->ne[0], (int)tensor->ne[1],
                 ne[0], ne[1]);
-        return false;
+        return nullptr;
       }
 
       // for debugging
@@ -441,7 +443,7 @@ bool autoregressive_model_load(const std::string &fname, autoregressive_model &m
                 "%s: tensor '%s' has wrong size in model file: got %zu, "
                 "expected %zu\n",
                 __func__, name.c_str(), ggml_nbytes(tensor), nelements * bpe);
-        return false;
+        return nullptr;
       }
 
       if (ggml_backend_buffer_is_host(model.buffer_w)) {
@@ -465,19 +467,22 @@ bool autoregressive_model_load(const std::string &fname, autoregressive_model &m
 
   fin.close();
 
-  return true;
+  return model_ptr;
 }
 
 // Diffusion model tensor loading
 // derived from  gpt2_model_load(const std::string & fname, gpt2_model & model,
 // gpt_vocab & vocab, int n_ctx, int n_gpu_layers) {
-bool diffusion_model_load(const std::string &fname, diffusion_model &model) {
+diffusion_model* diffusion_model_load(const std::string &fname) {
+  diffusion_model* model_ptr = new diffusion_model;
+  diffusion_model& model = *model_ptr;
+
   printf("%s: loading model from '%s'\n", __func__, fname.c_str());
 
   auto fin = std::ifstream(fname, std::ios::binary);
   if (!fin) {
     fprintf(stderr, "%s: failed to open '%s'\n", __func__, fname.c_str());
-    return false;
+    return nullptr;
   }
 
   // verify magic
@@ -487,7 +492,7 @@ bool diffusion_model_load(const std::string &fname, diffusion_model &model) {
     if (magic != GGML_FILE_MAGIC) {
       fprintf(stderr, "%s: invalid model file '%s' (bad magic)\n", __func__,
               fname.c_str());
-      return false;
+      return nullptr;
     }
   }
 
@@ -747,7 +752,7 @@ bool diffusion_model_load(const std::string &fname, diffusion_model &model) {
 
   if (!model.ctx) {
     fprintf(stderr, "%s: ggml_init() failed\n", __func__);
-    return false;
+    return nullptr;
   }
 
   // initialize the backend
@@ -777,7 +782,7 @@ bool diffusion_model_load(const std::string &fname, diffusion_model &model) {
 
   if (!model.backend) {
     fprintf(stderr, "%s: ggml_backend_cpu_init() failed\n", __func__);
-    return false;
+    return nullptr;
   }
 
   // model.buffer_w = ggml_backend_alloc_buffer(model.backend, buffer_size);
@@ -1114,7 +1119,7 @@ bool diffusion_model_load(const std::string &fname, diffusion_model &model) {
       if (model.tensors.find(name) == model.tensors.end()) {
         fprintf(stderr, "%s: unknown tensor '%s' in model file\n", __func__,
                 name.c_str());
-        return false;
+        return nullptr;
       }
 
       auto tensor = model.tensors[name];
@@ -1122,7 +1127,7 @@ bool diffusion_model_load(const std::string &fname, diffusion_model &model) {
       if (ggml_nelements(tensor) != nelements) {
         fprintf(stderr, "%s: tensor '%s' has wrong size in model file\n",
                 __func__, name.c_str());
-        return false;
+        return nullptr;
       }
 
       if (tensor->ne[0] != ne[0] || tensor->ne[1] != ne[1]) {
@@ -1131,7 +1136,7 @@ bool diffusion_model_load(const std::string &fname, diffusion_model &model) {
                 "expected [%d, %d]\n",
                 __func__, name.c_str(), (int)tensor->ne[0], (int)tensor->ne[1],
                 ne[0], ne[1]);
-        return false;
+        return nullptr;
       }
 
       // for debugging
@@ -1149,7 +1154,7 @@ bool diffusion_model_load(const std::string &fname, diffusion_model &model) {
                 "%s: tensor '%s' has wrong size in model file: got %zu, "
                 "expected %zu\n",
                 __func__, name.c_str(), ggml_nbytes(tensor), nelements * bpe);
-        return false;
+        return nullptr;
       }
 
       if (ggml_backend_buffer_is_host(model.buffer_w)) {
@@ -1173,17 +1178,19 @@ bool diffusion_model_load(const std::string &fname, diffusion_model &model) {
 
   fin.close();
 
-  return true;
+  return model_ptr;
 }
 
 // Vocoder model tensor loading
-bool vocoder_model_load(const std::string &fname, vocoder_model &model) {
+vocoder_model* vocoder_model_load(const std::string &fname) {
+  vocoder_model* model_ptr = new vocoder_model();
+  vocoder_model& model = *model_ptr;
   printf("%s: loading model from '%s'\n", __func__, fname.c_str());
 
   auto fin = std::ifstream(fname, std::ios::binary);
   if (!fin) {
     fprintf(stderr, "%s: failed to open '%s'\n", __func__, fname.c_str());
-    return false;
+    return nullptr;
   }
 
   // verify magic
@@ -1193,7 +1200,7 @@ bool vocoder_model_load(const std::string &fname, vocoder_model &model) {
     if (magic != GGML_FILE_MAGIC) {
       fprintf(stderr, "%s: invalid model file '%s' (bad magic)\n", __func__,
               fname.c_str());
-      return false;
+      return nullptr;
     }
   }
 
@@ -1283,7 +1290,7 @@ bool vocoder_model_load(const std::string &fname, vocoder_model &model) {
 
   if (!model.ctx) {
     fprintf(stderr, "%s: ggml_init() failed\n", __func__);
-    return false;
+    return nullptr;
   }
 
   // initialize the backend
@@ -1313,7 +1320,7 @@ bool vocoder_model_load(const std::string &fname, vocoder_model &model) {
 
   if (!model.backend) {
     fprintf(stderr, "%s: ggml_backend_cpu_init() failed\n", __func__);
-    return false;
+    return nullptr;
   }
 
   // model.buffer_w = ggml_backend_alloc_buffer(model.backend, buffer_size);
@@ -1473,7 +1480,7 @@ bool vocoder_model_load(const std::string &fname, vocoder_model &model) {
       if (model.tensors.find(name) == model.tensors.end()) {
         fprintf(stderr, "%s: unknown tensor '%s' in model file\n", __func__,
                 name.c_str());
-        return false;
+        return nullptr;
       }
 
       auto tensor = model.tensors[name];
@@ -1481,7 +1488,7 @@ bool vocoder_model_load(const std::string &fname, vocoder_model &model) {
       if (ggml_nelements(tensor) != nelements) {
         fprintf(stderr, "%s: tensor '%s' has wrong size in model file\n",
                 __func__, name.c_str());
-        return false;
+        return nullptr;
       }
 
       if (tensor->ne[0] != ne[0] || tensor->ne[1] != ne[1]) {
@@ -1490,7 +1497,7 @@ bool vocoder_model_load(const std::string &fname, vocoder_model &model) {
                 "expected [%d, %d]\n",
                 __func__, name.c_str(), (int)tensor->ne[0], (int)tensor->ne[1],
                 ne[0], ne[1]);
-        return false;
+        return nullptr;
       }
 
       // for debugging
@@ -1508,7 +1515,7 @@ bool vocoder_model_load(const std::string &fname, vocoder_model &model) {
                 "%s: tensor '%s' has wrong size in model file: got %zu, "
                 "expected %zu\n",
                 __func__, name.c_str(), ggml_nbytes(tensor), nelements * bpe);
-        return false;
+        return nullptr;
       }
 
       if (ggml_backend_buffer_is_host(model.buffer_w)) {
@@ -1532,7 +1539,37 @@ bool vocoder_model_load(const std::string &fname, vocoder_model &model) {
 
   fin.close();
 
-  return true;
+  return model_ptr;
+}
+
+void free_autoregressive_model(autoregressive_model* model) {
+    if (model) {
+        ggml_free(model->ctx);
+
+        ggml_backend_buffer_free(model->buffer_w);
+
+        delete model;
+    }
+}
+
+void free_diffusion_model(diffusion_model* model) {
+    if (model) {
+        ggml_free(model->ctx);
+
+        ggml_backend_buffer_free(model->buffer_w);
+
+        delete model;
+    }
+}
+
+void free_vocoder_model(vocoder_model* model) {
+    if (model) {
+        ggml_free(model->ctx);
+
+        ggml_backend_buffer_free(model->buffer_w);
+
+        delete model;
+    }
 }
 
 void extract_tensor_to_vector(ggml_tensor *tensor, std::vector<float> &vector) {
@@ -4307,11 +4344,11 @@ std::pair<trimmed_latents_vector, sequence_vector> autoregressive(
   // to the most characters)
 
   ggml_time_init();
-  const int64_t t_main_start_us = ggml_time_us();
+//   const int64_t t_main_start_us = ggml_time_us();
 
-  int64_t t_load_us = 0;
+//   int64_t t_load_us = 0;
 
-  std::string file_path = "../models/ggml-model.bin";
+//   std::string file_path = "../models/ggml-model.bin";
 
   // autoregressive_model model;
 
@@ -5504,16 +5541,16 @@ void test_autoregressive() {
 
   std::string file_path = "../models/ggml-model.bin";
 
-  autoregressive_model model;
+  autoregressive_model* model = autoregressive_model_load(file_path);
 
   // load the model
-  if (!autoregressive_model_load(file_path, model)) {
+  if (!model) {
     fprintf(stderr, "%s: failed to load model from '%s'\n", __func__,
             file_path.c_str());
     exit(1);
   }
 
-  std::pair<trimmed_latents_vector, sequence_vector> autoregressive_result = autoregressive(model, tokens, "../models/mol.bin", 4);
+  std::pair<trimmed_latents_vector, sequence_vector> autoregressive_result = autoregressive(*model, tokens, "../models/mol.bin", 4);
 
   trimmed_latents_vector& trimmed_latents = autoregressive_result.first;
   sequence_vector& sequences = autoregressive_result.second;
@@ -5724,9 +5761,9 @@ void test_diffusion() {
   fin2.close();
 
   std::string diffusion_file_path = "../models/ggml-diffusion-model.bin";
-  diffusion_model dfsn_model;
+  diffusion_model* dfsn_model = diffusion_model_load(diffusion_file_path);
 
-  if (!diffusion_model_load(diffusion_file_path, dfsn_model)) {
+  if (!dfsn_model) {
     std::cout << "failed to load diffusion model" << std::endl;
     exit(1);
   }
@@ -5735,7 +5772,7 @@ void test_diffusion() {
       load_f32_vector("../assets/diffusion_input.bin", 44032 * sizeof(float));
   std::vector<float> target_mel =
       load_f32_vector("../assets/target_mel.bin", 18700 * sizeof(float));
-  std::vector<float> mel = diffusion(dfsn_model, diffusion_input);
+  std::vector<float> mel = diffusion(*dfsn_model, diffusion_input);
   if (!vectors_match(target_mel, mel)) {
     std::cout << "mel mismatch" << std::endl;
     exit(1);
@@ -5752,18 +5789,18 @@ void test_vocoder() {
   std::vector<float> target_audio =
       load_f32_vector("../assets/target_audio.bin", 50426 * sizeof(float));
 
-  vocoder_model vocoder_model;
   std::string vocoder_model_file_path = "../models/ggml-vocoder-model.bin";
+  vocoder_model* model = vocoder_model_load(vocoder_model_file_path);
   // load the model
   {
-    if (!vocoder_model_load(vocoder_model_file_path, vocoder_model)) {
+    if (!model) {
       fprintf(stderr, "%s: failed to load model from '%s'\n", __func__,
               vocoder_model_file_path.c_str());
       exit(1);
     }
   }
 
-  std::vector<float> audio = vocoder(vocoder_model, vocoder_input);
+  std::vector<float> audio = vocoder(*model, vocoder_input);
   if (!vectors_match(target_audio, audio)) {
     std::cout << "mel mismatch" << std::endl;
     exit(1);

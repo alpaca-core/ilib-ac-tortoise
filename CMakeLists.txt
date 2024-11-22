@@ -85,9 +85,9 @@ endif()
 #     add_subdirectory(test)
 # endif()
 
-# if(AC_TORTOISE_BUILD_EXAMPLES)
-#     add_subdirectory(example)
-# endif()
+if(AC_TORTOISE_BUILD_EXAMPLES)
+    add_subdirectory(example)
+endif()
 
 # if(BUILD_AC_TORTOISE_PLUGIN)
 #     add_subdirectory(ac-local-plugin)

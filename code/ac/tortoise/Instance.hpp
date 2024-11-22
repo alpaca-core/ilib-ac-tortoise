@@ -10,7 +10,8 @@
 #include <string>
 #include <span>
 
-struct whisper_state;
+#include <ac/tortoise/common.h>
+
 
 namespace ac::tortoise {
 class Model;
@@ -18,24 +19,18 @@ class Model;
 class AC_TORTOISE_EXPORT Instance {
 public:
     struct InitParams {
-        enum SamplingStrategy {
-            GREEDY,      // similar to OpenAI's GreedyDecoder
-            BEAM_SEARCH, // similar to OpenAI's BeamSearchDecoder
-        };
-        SamplingStrategy samplingStrategy = GREEDY;
+        std::string tokenizerPath;
     };
 
     Instance(Model& model, InitParams params);
     ~Instance() = default;
 
-    std::string transcribe(std::span<const float> pcmf32);
-
+    std::vector<float> textToSpeech(std::string_view text, std::string_view voicePath);
 private:
-    std::string runInference(std::span<const float> pcmf32);
 
     Model& m_model;
     InitParams m_params;
-    // astl::c_unique_ptr<whisper_state> m_state;
+    std::unique_ptr<gpt_vocab> m_vocab;
 };
 
 } // namespace ac::tortoise
