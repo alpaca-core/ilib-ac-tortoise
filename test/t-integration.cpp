@@ -49,7 +49,10 @@ TEST_CASE("inference") {
 
     // general inference
     {
-        ac::tortoise::Instance instance(model, { .tokenizerPath = tokenizerPath });
+        ac::tortoise::Instance instance(model, {
+            .tokenizerPath = tokenizerPath,
+            .seed = 42
+            });
 
         auto res = instance.textToSpeech("This is alpaca test.", voicePath);
         CHECK(res.size() > 0);

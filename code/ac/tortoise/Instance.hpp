@@ -20,6 +20,7 @@ class AC_TORTOISE_EXPORT Instance {
 public:
     struct InitParams {
         std::string tokenizerPath;
+        unsigned seed;
     };
 
     Instance(Model& model, InitParams params);
