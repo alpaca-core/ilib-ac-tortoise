@@ -86,6 +86,11 @@ public:
         return i;
     }
 
+    /// Check if the model can be loaded
+    virtual bool canLoadModel(const ModelDesc& desc, const Dict& /*params*/) const noexcept override {
+         return desc.inferenceType == "tortoise";
+    }
+
     virtual ModelPtr loadModel(ModelDesc desc, Dict /*params*/, ProgressCb /*progressCb*/) override {
         if (desc.assets.size() != 3) throw_ex{} << "tortoise: expected exactly one local asset";
         auto& aggresive = desc.assets[0].path;
