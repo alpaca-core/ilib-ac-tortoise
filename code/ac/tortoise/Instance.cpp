@@ -35,6 +35,8 @@ std::vector<float> Instance::textToSpeech(std::string_view text, std::string_vie
     tokens.insert(tokens.end(), post.begin(), post.end());
     tokens.insert(tokens.begin(), pre.begin(), pre.end());
 
+    set_seed(42);
+
     auto autoregressiveResult = autoregressive(*m_model.autoregressiveModel(), tokens, voicePath.data(), 1);
 
     trimmed_latents_vector& trimmedLatents = autoregressiveResult.first;

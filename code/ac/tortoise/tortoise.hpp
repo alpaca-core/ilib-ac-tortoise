@@ -263,6 +263,8 @@ using sequence_vector = std::vector<std::vector<int>>;
 
 // ===================================================
 
+void set_seed(unsigned seed);
+
 autoregressive_model* autoregressive_model_load(const std::string &fname);
 diffusion_model* diffusion_model_load(const std::string &fname);
 vocoder_model* vocoder_model_load(const std::string &fname);

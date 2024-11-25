@@ -49,6 +49,10 @@ std::mt19937 generator(time_seed);
 std::uniform_real_distribution<float> distribution(0.0, 1.0);
 std::normal_distribution<double> normal_distribution(0.0, 1.0);
 
+void set_seed(unsigned seed) {
+    generator = std::mt19937(seed);
+}
+
 // Autoregressive model tensor loading
 // derived from  gpt2_model_load(const std::string & fname, gpt2_model & model,
 // gpt_vocab & vocab, int n_ctx, int n_gpu_layers) {
