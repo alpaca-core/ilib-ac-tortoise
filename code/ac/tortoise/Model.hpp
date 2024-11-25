@@ -16,7 +16,6 @@ namespace ac::tortoise {
 class AC_TORTOISE_EXPORT Model {
 public:
     struct Params {
-        bool gpu = true; // try to load data on gpu
     };
 
     Model(std::string_view autoregressiveModelPath,
