@@ -32,7 +32,7 @@ option(AC_TORTOISE_BUILD_TESTS "${PROJECT_NAME}: build tests" ${testsDefault})
 option(AC_TORTOISE_BUILD_EXAMPLES "${PROJECT_NAME}: build examples" ${examplesDefault})
 mark_as_advanced(AC_TORTOISE_BUILD_TESTS AC_TORTOISE_BUILD_EXAMPLES)
 
-init_ac_plugin_option(WHISPER)
+init_ac_plugin_option(TORTOISE)
 
 #######################################
 # packages
@@ -89,6 +89,6 @@ if(AC_TORTOISE_BUILD_EXAMPLES)
     add_subdirectory(example)
 endif()
 
-# if(BUILD_AC_TORTOISE_PLUGIN)
-#     add_subdirectory(ac-local-plugin)
-# endif()
+if(BUILD_AC_TORTOISE_PLUGIN)
+    add_subdirectory(ac-local-plugin)
+endif()
