@@ -23,9 +23,9 @@ int main() try {
     ac::local::Lib::loadPlugin(ACLP_tortoise_PLUGIN_FILE);;
 
     // load model
-    auto model = ac::local::Lib::modelLoaderRegistry().createModel(
+    auto model = ac::local::Lib::loadModel(
         {
-            .inferenceType = "tortoise",
+            .type = "tortoise.cpp",
             .assets = {
                 {.path = AC_TEST_DATA_TORTOISE_DIR "/ggml-model.bin"},
                 {.path = AC_TEST_DATA_TORTOISE_DIR "/ggml-diffusion-model.bin"},

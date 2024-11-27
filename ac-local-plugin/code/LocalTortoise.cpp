@@ -80,18 +80,17 @@ public:
     virtual const Info& info() const noexcept override {
         static Info i = {
             .name = "ac tortoise.cpp",
-            .vendor = "Alpaca Core",
-            .inferenceSchemaTypes = {"tortoise"},
+            .vendor = "Alpaca Core"
         };
         return i;
     }
 
     /// Check if the model can be loaded
-    virtual bool canLoadModel(const ModelDesc& desc, const Dict& /*params*/) const noexcept override {
-         return desc.inferenceType == "tortoise";
+    virtual bool canLoadModel(const ModelAssetDesc& desc, const Dict& /*params*/) const noexcept override {
+         return desc.type == "tortoise.cpp";
     }
 
-    virtual ModelPtr loadModel(ModelDesc desc, Dict /*params*/, ProgressCb /*progressCb*/) override {
+    virtual ModelPtr loadModel(ModelAssetDesc desc, Dict /*params*/, ProgressCb /*progressCb*/) override {
         if (desc.assets.size() != 3) throw_ex{} << "tortoise: expected exactly one local asset";
         auto& aggresive = desc.assets[0].path;
         auto& diffusion = desc.assets[1].path;
