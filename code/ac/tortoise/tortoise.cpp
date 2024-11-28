@@ -1549,8 +1549,8 @@ vocoder_model* vocoder_model_load(const std::string &fname) {
 void free_autoregressive_model(autoregressive_model* model) {
     if (model) {
         ggml_free(model->ctx);
-
         ggml_backend_buffer_free(model->buffer_w);
+        ggml_backend_free(model->backend);
 
         delete model;
     }
@@ -1559,8 +1559,8 @@ void free_autoregressive_model(autoregressive_model* model) {
 void free_diffusion_model(diffusion_model* model) {
     if (model) {
         ggml_free(model->ctx);
-
         ggml_backend_buffer_free(model->buffer_w);
+        ggml_backend_free(model->backend);
 
         delete model;
     }
@@ -1569,8 +1569,8 @@ void free_diffusion_model(diffusion_model* model) {
 void free_vocoder_model(vocoder_model* model) {
     if (model) {
         ggml_free(model->ctx);
-
         ggml_backend_buffer_free(model->buffer_w);
+        ggml_backend_free(model->backend);
 
         delete model;
     }
@@ -4628,11 +4628,11 @@ std::pair<trimmed_latents_vector, sequence_vector> autoregressive(
   ggml_gallocr_free(latent_allocr);
   ggml_gallocr_free(allocr);
 
-  ggml_free(model.ctx);
+//   ggml_free(model.ctx);
 
-  ggml_backend_buffer_free(model.buffer_w);
+//   ggml_backend_buffer_free(model.buffer_w);
 
-  ggml_backend_free(model.backend);
+//   ggml_backend_free(model.backend);
 
   std::vector<std::vector<float>> trimmed_latents =
       trim_latents(latents, sequences);
@@ -4896,7 +4896,7 @@ std::vector<float> diffusion(diffusion_model& dfsn_model, std::vector<float> tri
   output_shape.push_back(100);
   output_shape.push_back(output_sequence_length);
 
-  std::string diffusion_file_path = "../models/ggml-diffusion-model.bin";
+//   std::string diffusion_file_path = "../models/ggml-diffusion-model.bin";
 
   // diffusion_model dfsn_model;
 
@@ -5317,7 +5317,7 @@ std::vector<float> diffusion(diffusion_model& dfsn_model, std::vector<float> tri
 
 std::vector<float> vocoder(vocoder_model& vocoder, std::vector<float> mel) {
 
-  std::string vocoder_model_file_path = "../models/ggml-vocoder-model.bin";
+//   std::string vocoder_model_file_path = "../models/ggml-vocoder-model.bin";
 
   denormalize_tacotron_mel(mel);
   // printVector(mel, 3, "denormalized_mel");
