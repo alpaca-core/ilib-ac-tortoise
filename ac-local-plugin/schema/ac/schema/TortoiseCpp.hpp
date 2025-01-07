@@ -12,7 +12,7 @@ namespace ac::local::schema {
 
 struct TortoiseCppInterface {
     static inline constexpr std::string_view id = "tortoise.cpp";
-    static inline constexpr std::string_view description = "ilib-ac-tortoise.cpp-specific interface";
+    static inline constexpr std::string_view description = "ilib-ac-tortoise-specific interface";
 
     struct OpTTS {
         static inline constexpr std::string_view id = "tts";
@@ -44,7 +44,7 @@ struct TortoiseCppInterface {
 
 struct TortoiseCppLoader {
     static inline constexpr std::string_view id = "tortoise.cpp";
-    static inline constexpr std::string_view description = "Inference based on our fork of https://github.com/ggerganov/tortoise.cpp";
+    static inline constexpr std::string_view description = "Inference based on https://github.com/alpaca-core/ilib-ac-tortoise";
 
     using Params = nullptr_t;
 

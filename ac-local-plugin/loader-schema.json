@@ -1,0 +1,49 @@
+{
+  "id": "tortoise.cpp",
+  "description": "Inference based on https://github.com/alpaca-core/ilib-ac-tortoise",
+  "params": {
+    "type": "null"
+  },
+  "instances": {
+    "general": {
+      "description": "General instance",
+      "params": {
+        "type": "null"
+      },
+      "ops": {
+        "tts": {
+          "description": "Run the tortoise.cpp inference and produce audio",
+          "params": {
+            "type": "object",
+            "properties": {
+              "text": {
+                "type": "string",
+                "description": "Text to generate audio from"
+              },
+              "voicePath": {
+                "type": "string",
+                "description": "Path to the voice model"
+              }
+            },
+            "required": [
+              "text",
+              "voicePath"
+            ]
+          },
+          "return": {
+            "type": "object",
+            "properties": {
+              "result": {
+                "type": "binary",
+                "description": "Audio of the text"
+              }
+            },
+            "required": [
+              "result"
+            ]
+          }
+        }
+      }
+    }
+  }
+}
