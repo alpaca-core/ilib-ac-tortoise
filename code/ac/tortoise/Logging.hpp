@@ -9,4 +9,4 @@ namespace ac::tortoise::log {
 extern jalog::Scope scope;
 }
 
-#define WHISPER_LOG(lvl, ...) AC_JALOG_SCOPE(::ac::tortoise::log::scope, lvl, __VA_ARGS__)
+#define TORTOISE_LOG(lvl, ...) AC_JALOG_SCOPE(::ac::tortoise::log::scope, lvl, __VA_ARGS__)
