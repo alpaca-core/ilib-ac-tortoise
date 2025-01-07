@@ -9,6 +9,9 @@
 #include <ac/local/Model.hpp>
 #include <ac/local/ModelLoader.hpp>
 
+#include <ac/schema/TortoiseCpp.hpp>
+#include <ac/schema/DispatchHelpers.hpp>
+
 #include <astl/move.hpp>
 #include <astl/move_capture.hpp>
 #include <astl/iile.h>
@@ -25,40 +28,47 @@ namespace {
 class TortoiseInstance final : public Instance {
     std::shared_ptr<tortoise::Model> m_model;
     tortoise::Instance m_instance;
+    schema::OpDispatcherData m_dispatcherData;
 public:
+    using Schema = ac::local::schema::TortoiseCppLoader::InstanceGeneral;
+    using Interface = ac::local::schema::TortoiseCppInterface;
 
     TortoiseInstance(std::shared_ptr<tortoise::Model> model, tortoise::Instance::InitParams params)
         : m_model(astl::move(model))
         , m_instance(*m_model, astl::move(params))
-    {}
+    {
+        schema::registerHandlers<Interface::Ops>(m_dispatcherData, *this);
+    }
 
-    Dict runTTS(Dict& params) {
-        auto text = Dict_optValueAt(params, "text", std::string());
-        auto voicePath = Dict_optValueAt(params, "voicePath", std::string());
+    Interface::OpTTS::Return on(Interface::OpTTS, Interface::OpTTS::Params params) {
+        const auto& text = params.text.value();
+        const auto& voicePath = params.voicePath.value();
 
         auto result = m_instance.textToSpeech(text, voicePath);
 
         ac::Blob resultBlob;
         resultBlob.resize(result.size() * sizeof(float));
         memcpy(resultBlob.data(), result.data(), resultBlob.size());
-        Dict resultDict;
-        resultDict["result"] = std::move(resultBlob);
-        return resultDict;
+
+        return {
+            .result = std::move(resultBlob)
+        };
     }
 
     virtual Dict runOp(std::string_view op, Dict params, ProgressCb) override {
-        if (op == "tts") {
-            return runTTS(params);
+        auto ret = m_dispatcherData.dispatch(op, astl::move(params));
+        if (!ret) {
+            throw_ex{} << "tortoise: unknown op: " << op;
         }
-
-        throw_ex{} << "tortoise: unknown op: " << op;
-        MSVC_WO_10766806();
+        return *ret;
     }
 };
 
 class TortoiseModel final : public Model {
     std::shared_ptr<tortoise::Model> m_model;
 public:
+    using Schema = ac::local::schema::TortoiseCppLoader;
+
     TortoiseModel(
         std::string_view autoregressiveModelPath,
         std::string_view diffusionModelPath,

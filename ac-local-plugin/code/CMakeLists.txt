@@ -7,4 +7,5 @@ add_ac_local_plugin(
         LocalTortoise.cpp
     LIBRARIES
         ac::tortoise
+        ac::tortoise.cpp-schema
 )
