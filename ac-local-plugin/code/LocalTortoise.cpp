@@ -7,10 +7,10 @@
 
 #include <ac/local/Instance.hpp>
 #include <ac/local/Model.hpp>
-#include <ac/local/ModelLoader.hpp>
+#include <ac/local/Provider.hpp>
 
 #include <ac/schema/TortoiseCpp.hpp>
-#include <ac/schema/DispatchHelpers.hpp>
+#include <ac/local/schema/DispatchHelpers.hpp>
 
 #include <astl/move.hpp>
 #include <astl/move_capture.hpp>
@@ -30,8 +30,8 @@ class TortoiseInstance final : public Instance {
     tortoise::Instance m_instance;
     schema::OpDispatcherData m_dispatcherData;
 public:
-    using Schema = ac::local::schema::TortoiseCppLoader::InstanceGeneral;
-    using Interface = ac::local::schema::TortoiseCppInterface;
+    using Schema = ac::schema::TortoiseProvider::InstanceGeneral;
+    using Interface = ac::schema::TortoiseCppInterface;
 
     TortoiseInstance(std::shared_ptr<tortoise::Model> model, tortoise::Instance::InitParams params)
         : m_model(astl::move(model))
@@ -67,7 +67,7 @@ public:
 class TortoiseModel final : public Model {
     std::shared_ptr<tortoise::Model> m_model;
 public:
-    using Schema = ac::local::schema::TortoiseCppLoader;
+    using Schema = ac::schema::TortoiseProvider;
 
     TortoiseModel(
         std::string_view autoregressiveModelPath,
@@ -85,7 +85,7 @@ public:
     }
 };
 
-class TortoiseModelLoader final : public ModelLoader {
+class TortoiseProvider final : public Provider {
 public:
     virtual const Info& info() const noexcept override {
         static Info i = {
@@ -108,6 +108,10 @@ public:
         tortoise::Model::Params modelParams;
         return std::make_shared<TortoiseModel>(aggresive, diffusion, vocoder, modelParams);
     }
+
+    virtual frameio::SessionHandlerPtr createSessionHandler(std::string_view) override {
+        return {};
+    }
 };
 }
 
@@ -119,9 +123,9 @@ void init() {
     initLibrary();
 }
 
-std::vector<ac::local::ModelLoaderPtr> getLoaders() {
-    std::vector<ac::local::ModelLoaderPtr> ret;
-    ret.push_back(std::make_unique<local::TortoiseModelLoader>());
+std::vector<ac::local::ProviderPtr> getProviders() {
+    std::vector<ac::local::ProviderPtr> ret;
+    ret.push_back(std::make_unique<local::TortoiseProvider>());
     return ret;
 }
 
@@ -134,7 +138,7 @@ local::PluginInterface getPluginInterface() {
             ACLP_tortoise_VERSION_MAJOR, ACLP_tortoise_VERSION_MINOR, ACLP_tortoise_VERSION_PATCH
         },
         .init = init,
-        .getLoaders = getLoaders,
+        .getProviders = getProviders,
     };
 }
 

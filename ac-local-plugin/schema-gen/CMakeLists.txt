@@ -7,4 +7,5 @@ target_sources(ac-tortoise.cpp-schema-gen PRIVATE
 )
 target_link_libraries(ac-tortoise.cpp-schema-gen PRIVATE
     ac::tortoise.cpp-schema
+    ac::local
 )

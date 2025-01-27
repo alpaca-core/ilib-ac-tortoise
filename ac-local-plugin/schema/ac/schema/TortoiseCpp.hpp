@@ -8,7 +8,7 @@
 #include <string>
 #include <tuple>
 
-namespace ac::local::schema {
+namespace ac::schema {
 
 struct TortoiseCppInterface {
     static inline constexpr std::string_view id = "tortoise.cpp";
@@ -42,7 +42,7 @@ struct TortoiseCppInterface {
     using Ops = std::tuple<OpTTS>;
 };
 
-struct TortoiseCppLoader {
+struct TortoiseProvider {
     static inline constexpr std::string_view id = "tortoise.cpp";
     static inline constexpr std::string_view description = "Inference based on https://github.com/alpaca-core/ilib-ac-tortoise";
 

@@ -3,7 +3,7 @@
 //
 #include <ac/local/Model.hpp>
 #include <ac/local/Instance.hpp>
-#include <ac/local/ModelLoaderRegistry.hpp>
+#include <ac/local/ModelAssetDesc.hpp>
 #include <ac/local/Lib.hpp>
 
 #include <ac/jalog/Instance.hpp>
