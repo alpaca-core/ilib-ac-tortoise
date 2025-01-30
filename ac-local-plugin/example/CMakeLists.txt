@@ -10,6 +10,7 @@ function(add_tortoise_plugin_example name)
         ac-test-data::tortoise
         aclp::tortoise-info
         ac-dev::audio
+        ac::tortoise.cpp-schema
     )
     set_target_properties(${tgt} PROPERTIES FOLDER example)
 endfunction()

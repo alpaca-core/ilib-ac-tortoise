@@ -1,10 +1,15 @@
 // Copyright (c) Alpaca Core
 // SPDX-License-Identifier: MIT
 //
-#include <ac/local/Model.hpp>
-#include <ac/local/Instance.hpp>
-#include <ac/local/ModelAssetDesc.hpp>
 #include <ac/local/Lib.hpp>
+
+#include <ac/frameio/local/LocalIoRunner.hpp>
+#include <ac/frameio/local/BlockingIo.hpp>
+
+#include <ac/schema/BlockingIoHelper.hpp>
+#include <ac/schema/FrameHelpers.hpp>
+
+#include <ac/schema/TortoiseCpp.hpp>
 
 #include <ac/jalog/Instance.hpp>
 #include <ac/jalog/sinks/DefaultSink.hpp>
@@ -16,38 +21,37 @@
 
 #include <ac-audio.hpp>
 
+namespace schema = ac::schema::tortoise;
+
 int main() try {
     ac::jalog::Instance jl;
     jl.setup().add<ac::jalog::sinks::DefaultSink>();
 
-    ac::local::Lib::loadPlugin(ACLP_tortoise_PLUGIN_FILE);;
+    ac::local::Lib::loadPlugin(ACLP_tortoise_PLUGIN_FILE);
 
-    // load model
-    auto model = ac::local::Lib::loadModel(
-        {
-            .type = "tortoise.cpp",
-            .assets = {
-                {.path = AC_TEST_DATA_TORTOISE_DIR "/ggml-model.bin"},
-                {.path = AC_TEST_DATA_TORTOISE_DIR "/ggml-diffusion-model.bin"},
-                {.path = AC_TEST_DATA_TORTOISE_DIR "/ggml-vocoder-model.bin"}
-            }
-        },
-        {}, // no params
-        {} // empty progress callback
-    );
-    ac::Dict params;
-    params["tokenizerPath"] = AC_TEST_DATA_TORTOISE_DIR "/tokenizer.json";
-    params["seed"] = 42;
-    auto instance = model->createInstance("general", params);
+    ac::frameio::LocalIoRunner io;
+    ac::schema::BlockingIoHelper tortoise(io.connectBlocking(ac::local::Lib::createSessionHandler("tortoise.cpp")));
 
-    auto result = instance->runOp("tts", {
-            {"text", "This is an example of Tortoise Alpaca plugin."},
-            {"voicePath", AC_TEST_DATA_TORTOISE_DIR "/mouse.bin"},
-        }, {});
+    tortoise.expectState<schema::StateInitial>();
+    tortoise.call<schema::StateInitial::OpLoadModel>({
+        .aggresivePath = AC_TEST_DATA_TORTOISE_DIR "/ggml-model.bin",
+        .diffusionPath = AC_TEST_DATA_TORTOISE_DIR "/ggml-diffusion-model.bin",
+        .vocoderPath = AC_TEST_DATA_TORTOISE_DIR "/ggml-vocoder-model.bin"
+    });
+    tortoise.expectState<schema::StateModelLoaded>();
+    tortoise.call<schema::StateModelLoaded::OpStartInstance>({
+        .tokenizerPath = AC_TEST_DATA_TORTOISE_DIR "/tokenizer.json",
+    });
 
-    auto res = ac::Dict_optValueAt(result, "result", ac::Blob{});
-    float* resData = reinterpret_cast<float*>(res.data());
-    size_t resSize = res.size() / sizeof(float);
+    tortoise.expectState<schema::StateInstance>();
+    auto result = tortoise.call<schema::StateInstance::OpTTS>({
+        .text = "This is an example of Tortoise Alpaca plugin.",
+        .voicePath = AC_TEST_DATA_TORTOISE_DIR "/mouse.bin",
+    });
+
+    // auto res = ac::Dict_optValueAt(result, "result", ac::Blob{});
+    float* resData = reinterpret_cast<float*>(result.audioData.value().data());
+    size_t resSize = result.audioData.value().size() / sizeof(float);
 
     ac::audio::WavWriter wavWriter;
     wavWriter.open("pluginOutput.wav", 24000, 16, 1);

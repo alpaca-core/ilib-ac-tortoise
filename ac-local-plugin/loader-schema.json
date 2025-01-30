@@ -1,15 +1,69 @@
 {
   "id": "tortoise.cpp",
-  "description": "Inference based on https://github.com/alpaca-core/ilib-ac-tortoise",
-  "params": {
-    "type": "null"
-  },
-  "instances": {
-    "general": {
-      "description": "General instance",
-      "params": {
-        "type": "null"
+  "description": "ilib-ac-tortoise-specific interface",
+  "states": [
+    {
+      "id": "initial",
+      "description": "Initial state",
+      "ops": {
+        "load-model": {
+          "description": "Load the tortoise.cpp model",
+          "params": {
+            "type": "object",
+            "properties": {
+              "aggresivePath": {
+                "type": "string",
+                "description": "Path to the file with aggresive model."
+              },
+              "diffusionPath": {
+                "type": "string",
+                "description": "Path to the file with diffusion model."
+              },
+              "vocoderPath": {
+                "type": "string",
+                "description": "Path to the file with vocoder model."
+              }
+            }
+          },
+          "return": {
+            "type": "null"
+          }
+        }
       },
+      "ins": null,
+      "outs": null
+    },
+    {
+      "id": "model-loaded",
+      "description": "Model loaded state",
+      "ops": {
+        "start-instance": {
+          "description": "Start a new instance of the whisper.cpp model",
+          "params": {
+            "type": "object",
+            "properties": {
+              "tokenizerPath": {
+                "type": "string",
+                "description": "Path to the file with tokenizer."
+              },
+              "seed": {
+                "type": "integer",
+                "description": "Seed for the model",
+                "default": 42
+              }
+            }
+          },
+          "return": {
+            "type": "null"
+          }
+        }
+      },
+      "ins": null,
+      "outs": null
+    },
+    {
+      "id": "instance",
+      "description": "Instance state",
       "ops": {
         "tts": {
           "description": "Run the tortoise.cpp inference and produce audio",
@@ -33,17 +87,19 @@
           "return": {
             "type": "object",
             "properties": {
-              "result": {
+              "audioData": {
                 "type": "binary",
                 "description": "Audio of the text"
               }
             },
             "required": [
-              "result"
+              "audioData"
             ]
           }
         }
-      }
+      },
+      "ins": null,
+      "outs": null
     }
-  }
+  ]
 }
