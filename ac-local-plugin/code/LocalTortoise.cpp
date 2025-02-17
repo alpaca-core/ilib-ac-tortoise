@@ -100,9 +100,6 @@ struct BasicRunner {
             }
             return {f.op, *ret};
         }
-        catch (coro::IoClosed&) {
-            throw;
-        }
         catch (std::exception& e) {
             return {"error", e.what()};
         }
@@ -230,7 +227,7 @@ SessionCoro<void> Tortoise_runSession() {
             }
         }
     }
-    catch (coro::IoClosed&) {
+    catch (std::exception& e) {
         co_return;
     }
 }
