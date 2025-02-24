@@ -2,10 +2,7 @@
 // SPDX-License-Identifier: MIT
 //
 #include <ac/local/Lib.hpp>
-
-#include <ac/frameio/local/LocalIoRunner.hpp>
-#include <ac/frameio/local/BlockingIo.hpp>
-
+#include <ac/local/IoCtx.hpp>
 #include <ac/schema/BlockingIoHelper.hpp>
 #include <ac/schema/FrameHelpers.hpp>
 
@@ -29,8 +26,11 @@ int main() try {
 
     ac::local::Lib::loadPlugin(ACLP_tortoise_PLUGIN_FILE);
 
-    ac::frameio::LocalIoRunner io;
-    ac::schema::BlockingIoHelper tortoise(io.connectBlocking(ac::local::Lib::createSessionHandler("tortoise.cpp")));
+    ac::frameio::BlockingIoCtx blockingCtx;
+    ac::local::IoCtx io;
+
+    auto& provider = ac::local::Lib::getProvider("tortoise.cpp");
+    ac::schema::BlockingIoHelper tortoise(io.connect(provider), blockingCtx);
 
     tortoise.expectState<schema::StateInitial>();
     tortoise.call<schema::StateInitial::OpLoadModel>({

@@ -6,12 +6,16 @@
 #include <ac/tortoise/Model.hpp>
 
 #include <ac/local/Provider.hpp>
+#include <ac/local/ProviderSessionContext.hpp>
 
 #include <ac/schema/TortoiseCpp.hpp>
 #include <ac/schema/OpDispatchHelpers.hpp>
 
-#include <ac/frameio/SessionCoro.hpp>
 #include <ac/FrameUtil.hpp>
+#include <ac/frameio/IoEndpoint.hpp>
+
+#include <ac/xec/coro.hpp>
+#include <ac/io/exception.hpp>
 
 #include <astl/move.hpp>
 #include <astl/move_capture.hpp>
@@ -25,66 +29,6 @@
 namespace ac::local {
 
 namespace {
-
-// class TortoiseInstance final : public Instance {
-//     std::shared_ptr<tortoise::Model> m_model;
-//     tortoise::Instance m_instance;
-//     schema::OpDispatcherData m_dispatcherData;
-// public:
-//     using Schema = ac::schema::TortoiseProvider::InstanceGeneral;
-//     using Interface = ac::schema::TortoiseCppInterface;
-
-//     TortoiseInstance(std::shared_ptr<tortoise::Model> model, tortoise::Instance::InitParams params)
-//         : m_model(astl::move(model))
-//         , m_instance(*m_model, astl::move(params))
-//     {
-//         schema::registerHandlers<Interface::Ops>(m_dispatcherData, *this);
-//     }
-
-//     Interface::OpTTS::Return on(Interface::OpTTS, Interface::OpTTS::Params params) {
-//         const auto& text = params.text.value();
-//         const auto& voicePath = params.voicePath.value();
-
-//         auto result = m_instance.textToSpeech(text, voicePath);
-
-//         ac::Blob resultBlob;
-//         resultBlob.resize(result.size() * sizeof(float));
-//         memcpy(resultBlob.data(), result.data(), resultBlob.size());
-
-//         return {
-//             .result = std::move(resultBlob)
-//         };
-//     }
-
-//     virtual Dict runOp(std::string_view op, Dict params, ProgressCb) override {
-//         auto ret = m_dispatcherData.dispatch(op, astl::move(params));
-//         if (!ret) {
-//             throw_ex{} << "tortoise: unknown op: " << op;
-//         }
-//         return *ret;
-//     }
-// };
-
-// class TortoiseModel final : public Model {
-//     std::shared_ptr<tortoise::Model> m_model;
-// public:
-//     using Schema = ac::schema::TortoiseProvider;
-
-//     TortoiseModel(
-//         std::string_view autoregressiveModelPath,
-//         std::string_view diffusionModelPath,
-//         std::string_view vocoderModelPath,
-//         tortoise::Model::Params params)
-//         : m_model(std::make_shared<tortoise::Model>(autoregressiveModelPath, diffusionModelPath, vocoderModelPath, astl::move(params)))
-//     {}
-
-//     virtual std::unique_ptr<Instance> createInstance(std::string_view, Dict params) override {
-//         tortoise::Instance::InitParams initParams;
-//         initParams.tokenizerPath = Dict_optValueAt(params, "tokenizerPath", std::string());
-//         initParams.seed = Dict_optValueAt(params, "seed", 42);
-//         return std::make_unique<TortoiseInstance>(m_model, astl::move(initParams));
-//     }
-// };
 
 namespace sc = schema::tortoise;
 using namespace ac::frameio;
@@ -100,13 +44,16 @@ struct BasicRunner {
             }
             return {f.op, *ret};
         }
+        catch (io::stream_closed_error&) {
+            throw;
+        }
         catch (std::exception& e) {
             return {"error", e.what()};
         }
     }
 };
 
-SessionCoro<void> Tortoise_runInstance(coro::Io io, std::unique_ptr<tortoise::Instance> instance) {
+xec::coro<void> Tortoise_runInstance(IoEndpoint& io, std::unique_ptr<tortoise::Instance> instance) {
     using Schema = sc::StateInstance;
 
     struct Runner : public BasicRunner {
@@ -134,16 +81,16 @@ SessionCoro<void> Tortoise_runInstance(coro::Io io, std::unique_ptr<tortoise::In
         }
     };
 
-    co_await io.pushFrame(Frame_stateChange(Schema::id));
+    co_await io.push(Frame_stateChange(Schema::id));
 
     Runner runner(*instance);
     while (true) {
-        auto f = co_await io.pollFrame();
-        co_await io.pushFrame(runner.dispatch(f.frame));
+        auto f = co_await io.poll();
+        co_await io.push(runner.dispatch(*f));
     }
 }
 
-SessionCoro<void> Tortoise_runModel(coro::Io io, std::unique_ptr<tortoise::Model> model) {
+xec::coro<void> Tortoise_runModel(IoEndpoint& io, std::unique_ptr<tortoise::Model> model) {
     using Schema = sc::StateModelLoaded;
 
     struct Runner : public BasicRunner {
@@ -169,19 +116,19 @@ SessionCoro<void> Tortoise_runModel(coro::Io io, std::unique_ptr<tortoise::Model
         }
     };
 
-    co_await io.pushFrame(Frame_stateChange(Schema::id));
+    co_await io.push(Frame_stateChange(Schema::id));
 
     Runner runner(*model);
     while (true) {
-        auto f = co_await io.pollFrame();
-        co_await io.pushFrame(runner.dispatch(f.frame));
+        auto f = co_await io.poll();
+        co_await io.push(runner.dispatch(*f));
         if (runner.instance) {
             co_await Tortoise_runInstance(io, std::move(runner.instance));
         }
     }
 }
 
-SessionCoro<void> Tortoise_runSession() {
+xec::coro<void> Tortoise_runSession(StreamEndpoint ep) {
     using Schema = sc::StateInitial;
 
     struct Runner : public BasicRunner {
@@ -213,15 +160,16 @@ SessionCoro<void> Tortoise_runSession() {
     };
 
     try {
-        auto io = co_await coro::Io{};
+        auto ex = co_await xec::executor{};
+        IoEndpoint io(std::move(ep), ex);
 
-        co_await io.pushFrame(Frame_stateChange(Schema::id));
+        co_await io.push(Frame_stateChange(Schema::id));
 
         Runner runner;
 
         while (true) {
-            auto f = co_await io.pollFrame();
-            co_await io.pushFrame(runner.dispatch(f.frame));
+            auto f = co_await io.poll();
+            co_await io.push(runner.dispatch(*f));
             if (runner.model) {
                 co_await Tortoise_runModel(io, std::move(runner.model));
             }
@@ -242,22 +190,8 @@ public:
         return i;
     }
 
-    /// Check if the model can be loaded
-    // virtual bool canLoadModel(const ModelAssetDesc& desc, const Dict& /*params*/) const noexcept override {
-    //      return desc.type == "tortoise.cpp";
-    // }
-
-    // virtual ModelPtr loadModel(ModelAssetDesc desc, Dict /*params*/, ProgressCb /*progressCb*/) override {
-    //     if (desc.assets.size() != 3) throw_ex{} << "tortoise: expected exactly one local asset";
-    //     auto& aggresive = desc.assets[0].path;
-    //     auto& diffusion = desc.assets[1].path;
-    //     auto& vocoder = desc.assets[2].path;
-        // tortoise::Model::Params modelParams;
-    //     return std::make_shared<TortoiseModel>(aggresive, diffusion, vocoder, modelParams);
-    // }
-
-    virtual frameio::SessionHandlerPtr createSessionHandler(std::string_view) override {
-        return CoroSessionHandler::create(Tortoise_runSession());
+    virtual void createSession(ProviderSessionContext ctx) override {
+        co_spawn(ctx.executor.cpu, Tortoise_runSession(std::move(ctx.endpoint.session)));
     }
 };
 }
