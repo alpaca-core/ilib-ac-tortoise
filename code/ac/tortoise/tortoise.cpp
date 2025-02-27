@@ -2,7 +2,7 @@
 #include <ggml-backend.h>
 #include <ggml.h>
 
-#ifdef GGML_USE_CUBLAS
+#ifdef GGML_USE_CUDA
 #include "ggml-cuda.h"
 #endif
 
@@ -25,6 +25,7 @@
 #include <random>
 #include <string>
 #include <vector>
+#include <numeric>
 
 #if defined(_MSC_VER)
 #pragma warning(disable : 4244 4267) // possible loss of data
@@ -224,7 +225,7 @@ autoregressive_model* autoregressive_model_load(const std::string &fname) {
   }
 
   // initialize the backend
-#ifdef GGML_USE_CUBLAS
+#ifdef GGML_USE_CUDA
   fprintf(stderr, "%s: using CUDA backend\n", __func__);
   model.backend = ggml_backend_cuda_init(0);
   if (!model.backend) {
@@ -382,7 +383,7 @@ autoregressive_model* autoregressive_model_load(const std::string &fname) {
   {
     size_t total_size = 0;
 
-    bool has_lm_head = false;
+    //bool has_lm_head = false;
 
     std::vector<char> read_buf;
 
@@ -760,7 +761,7 @@ diffusion_model* diffusion_model_load(const std::string &fname) {
   }
 
   // initialize the backend
-#ifdef GGML_USE_CUBLAS
+#ifdef GGML_USE_CUDA
   fprintf(stderr, "%s: using CUDA backend\n", __func__);
   model.backend = ggml_backend_cuda_init(0);
   if (!model.backend) {
@@ -1093,7 +1094,7 @@ diffusion_model* diffusion_model_load(const std::string &fname) {
 
     size_t total_size = 0;
 
-    bool has_lm_head = false;
+    //bool has_lm_head = false;
 
     std::vector<char> read_buf;
 
@@ -1298,7 +1299,7 @@ vocoder_model* vocoder_model_load(const std::string &fname) {
   }
 
   // initialize the backend
-#ifdef GGML_USE_CUBLAS
+#ifdef GGML_USE_CUDA
   fprintf(stderr, "%s: using CUDA backend\n", __func__);
   model.backend = ggml_backend_cuda_init(0);
   if (!model.backend) {
@@ -1454,7 +1455,7 @@ vocoder_model* vocoder_model_load(const std::string &fname) {
 
     size_t total_size = 0;
 
-    bool has_lm_head = false;
+    //bool has_lm_head = false;
 
     std::vector<char> read_buf;
 
@@ -1722,7 +1723,7 @@ struct ggml_cgraph* autoregressive_latent_graph(
   struct ggml_tensor *residual;
   struct ggml_tensor *feed_forward_residual;
 
-  struct ggml_tensor *test;
+  //struct ggml_tensor *test;
 
   for (int i = 0; i < 30; i++) {
 

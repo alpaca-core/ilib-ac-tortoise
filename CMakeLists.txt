@@ -37,7 +37,7 @@ init_ac_plugin_option(TORTOISE)
 #######################################
 # packages
 
-add_ac_local(0.1.16)
+add_ac_local(0.1.17)
 CPMAddPackage(gh:iboB/splat@1.3.3)
 CPMAddPackage(gh:iboB/itlib@1.11.4)
 
@@ -55,7 +55,7 @@ if(CUDAToolkit_FOUND)
 endif()
 
 if(haveCuda)
-    set(GGML_CUBLAS ON)
+    set(GGML_CUDA ON)
 endif()
 
 if(UNIX AND APPLE)

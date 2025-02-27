@@ -66,7 +66,7 @@ TEST_CASE("inference") {
 
         for (size_t i = 0; i < res.size(); i++)
         {
-            CHECK(abs(res[i] - g_testResult[i]) < .000001);
+            CHECK(abs(res[i] - float(g_testResult[i])) < .000001);
         }
     }
 }
