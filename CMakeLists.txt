@@ -37,7 +37,7 @@ init_ac_plugin_option(TORTOISE)
 #######################################
 # packages
 
-add_ac_local(0.1.17)
+add_ac_local(0.1.18)
 CPMAddPackage(gh:iboB/splat@1.3.3)
 CPMAddPackage(gh:iboB/itlib@1.11.4)
 
